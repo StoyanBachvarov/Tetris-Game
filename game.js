@@ -50,6 +50,9 @@ class Game {
         this.dropCounter = 0;
         this.lastDropTime = 0;
         
+        // Track key states for continuous movement
+        this.keysPressed = {};
+        
         this.setupEventListeners();
         this.generateNextPiece();
         this.spawnPiece();
@@ -66,6 +69,9 @@ class Game {
         document.addEventListener('keydown', (e) => {
             if (!this.isGameRunning || this.isPaused) return;
             
+            // Track key state
+            this.keysPressed[e.key] = true;
+            
             switch(e.key) {
                 case 'ArrowLeft':
                     this.movePiece(-1);
@@ -80,7 +86,6 @@ class Game {
                     e.preventDefault();
                     break;
                 case 'ArrowDown':
-                    this.accelerateDrop();
                     e.preventDefault();
                     break;
                 case ' ':
@@ -88,6 +93,10 @@ class Game {
                     e.preventDefault();
                     break;
             }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            this.keysPressed[e.key] = false;
         });
     }
     
@@ -250,7 +259,13 @@ class Game {
         const now = Date.now();
         const timeSinceLastDrop = now - this.lastDropTime;
         
-        if (timeSinceLastDrop + this.dropCounter > this.gameSpeed) {
+        // Check if down arrow is held for continuous fast drop
+        let dropSpeed = this.gameSpeed;
+        if (this.keysPressed['ArrowDown']) {
+            dropSpeed = 50; // Much faster when holding down arrow
+        }
+        
+        if (timeSinceLastDrop + this.dropCounter > dropSpeed) {
             this.currentPiece.y++;
             this.dropCounter = 0;
             this.lastDropTime = now;
